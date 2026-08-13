@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roteirista Pro v3.0 - Studio Edition</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Courier+Prime:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Markdown Parser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app" class="app-container">
+        
+        <!-- Title Bar -->
+        <header class="title-bar">
+            <div class="title-bar-left">
+                <div class="app-logo">
+                    <i class="fas fa-film"></i>
+                    <span>Roteirista Pro</span>
+                    <span class="version-badge">v3.0 Studio</span>
+                </div>
+            </div>
+            
+            <div class="title-bar-center">
+                <div class="file-info">
+                    <input type="text" id="fileName" class="file-name-input" value="Sem Título.fountain" />
+                    <span id="autoSaveStatus" class="save-status">
+                        <i class="fas fa-check-circle"></i> Salvo
+                    </span>
+                </div>
+            </div>
+            
+            <div class="title-bar-right">
+                <div class="window-controls">
+                    <button class="control-btn minimize" title="Minimizar">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="control-btn maximize" title="Maximizar">
+                        <i class="far fa-square"></i>
+                    </button>
+                    <button class="control-btn close" title="Fechar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Toolbar -->
+        <nav class="main-toolbar">
+            <div class="toolbar-section">
+                <button class="tool-btn" onclick="app.file.new()" title="Novo (Ctrl+N)">
+                    <i class="fas fa-file"></i>
+                    <span>Novo</span>
+                </button>
+                <button class="tool-btn" onclick="app.file.open()" title="Abrir (Ctrl+O)">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Abrir</span>
+                </button>
+                <button class="tool-btn" onclick="app.file.save()" title="Salvar (Ctrl+S)">
+                    <i class="fas fa-save"></i>
+                    <span>Salvar</span>
+                </button>
+                <button class="tool-btn dropdown" onclick="app.ui.toggleDropdown('exportMenu')" title="Exportar">
+                    <i class="fas fa-download"></i>
+                    <span>Exportar</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div id="exportMenu" class="dropdown-menu">
+                    <button onclick="app.export.toPDF()">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button onclick="app.export.toHTML()">
+                        <i class="fas fa-file-code"></i> HTML
+                    </button>
+                    <button onclick="app.export.toFountain()">
+                        <i class="fas fa-file-alt"></i> Fountain
+                    </button>
+                    <button onclick="app.export.toFDX()">
+                        <i class="fas fa-file-import"></i> Final Draft
+                    </button>
+                </div>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-section">
+                <button class="tool-btn" onclick="app.editor.undo()" title="Desfazer (Ctrl+Z)">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button class="tool-btn" onclick="app.editor.redo()" title="Refazer (Ctrl+Y)">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button class="tool-btn" onclick="app.editor.cut()" title="Cortar (Ctrl+X)">
+                    <i class="fas fa-cut"></i>
+                </button>
+                <button class="tool-btn" onclick="app.editor.copy()" title="Copiar (Ctrl+C)">
+                    <i class="fas fa-copy"></i>
+                </button>
+                <button class="tool-btn" onclick="app.editor.paste()" title="Colar (Ctrl+V)">
+                    <i class="fas fa-paste"></i>
+                </button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-section">
+                <button class="tool-btn" onclick="app.format.insertScene()" title="Cena (Ctrl+Shift+C)">
+                    <i class="fas fa-heading"></i>
+                    <span>Cena</span>
+                </button>
+                <button class="tool-btn" onclick="app.format.insertAction()" title="Ação (Ctrl+Shift+A)">
+                    <i class="fas fa-running"></i>
+                    <span>Ação</span>
+                </button>
+                <button class="tool-btn" onclick="app.format.insertCharacter()" title="Personagem (Ctrl+P)">
+                    <i class="fas fa-user"></i>
+                    <span>Personagem</span>
+                </button>
+                <button class="tool-btn" onclick="app.format.insertDialogue()" title="Diálogo (Ctrl+D)">
+                    <i class="fas fa-comments"></i>
+                    <span>Diálogo</span>
+                </button>
+                <button class="tool-btn" onclick="app.format.insertParenthetical()" title="Parenthetical (Ctrl+Shift+P)">
+                    <i class="fas fa-brackets-curly"></i>
+                    <span>( )</span>
+                </button>
+                <button class="tool-btn" onclick="app.format.insertTransition()" title="Transição (Ctrl+T)">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transição</span>
+                </button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-section">
+                <button class="tool-btn" onclick="app.tools.toggleSpellCheck()" id="spellCheckBtn" title="Verificação Ortográfica">
+                    <i class="fas fa-spell-check"></i>
+                    <span>ABC</span>
+                </button>
+                <button class="tool-btn" onclick="app.search.toggle()" title="Buscar (Ctrl+F)">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="tool-btn" onclick="app.tools.toggleWordCount()" title="Estatísticas">
+                    <i class="fas fa-chart-bar"></i>
+                </button>
+            </div>
+
+            <div class="toolbar-spacer"></div>
+
+            <div class="toolbar-section">
+                <div class="zoom-control">
+                    <button class="tool-btn icon-only" onclick="app.editor.zoomOut()">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span id="zoomLevel">100%</span>
+                    <button class="tool-btn icon-only" onclick="app.editor.zoomIn()">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                
+                <button class="tool-btn theme-toggle" onclick="app.ui.toggleTheme()" title="Alternar Tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <button class="tool-btn" onclick="app.settings.show()" title="Configurações">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Search Bar -->
+        <div id="searchBar" class="search-bar hidden">
+            <div class="search-input-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Buscar no roteiro..." />
+                <span id="searchResults">0/0</span>
+                <button class="search-nav" onclick="app.search.previous()">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+                <button class="search-nav" onclick="app.search.next()">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="search-options">
+                <label>
+                    <input type="checkbox" id="searchCaseSensitive" /> Maiúsculas/Minúsculas
+                </label>
+                <label>
+                    <input type="checkbox" id="searchRegex" /> Regex
+                </label>
+            </div>
+            <button class="close-btn" onclick="app.search.toggle()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Replace Bar -->
+        <div id="replaceBar" class="replace-bar hidden">
+            <div class="search-input-group">
+                <i class="fas fa-exchange-alt"></i>
+                <input type="text" id="replaceInput" placeholder="Substituir por..." />
+                <button class="replace-btn" onclick="app.search.replace()">
+                    Substituir
+                </button>
+                <button class="replace-btn" onclick="app.search.replaceAll()">
+                    Substituir Tudo
+                </button>
+            </div>
+            <button class="close-btn" onclick="app.search.toggleReplace()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Left Sidebar - Navigator -->
+            <aside class="sidebar left-sidebar" id="leftSidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-compass"></i> Navegador</h3>
+                    <button class="sidebar-toggle" onclick="app.ui.toggleSidebar('left')">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                
+                <div class="sidebar-content">
+                    <!-- Scenes Panel -->
+                    <div class="panel" id="scenesPanel">
+                        <div class="panel-header" onclick="app.ui.togglePanel('scenesList')">
+                            <i class="fas fa-film"></i>
+                            <span>Cenas</span>
+                            <span class="badge" id="sceneCount">0</span>
+                            <i class="fas fa-chevron-down panel-arrow"></i>
+                        </div>
+                        <div class="panel-content" id="scenesList">
+                            <div id="scenesContainer" class="scenes-container">
+                                <!-- Scenes will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Characters Panel -->
+                    <div class="panel" id="charactersPanel">
+                        <div class="panel-header" onclick="app.ui.togglePanel('charactersList')">
+                            <i class="fas fa-users"></i>
+                            <span>Personagens</span>
+                            <span class="badge" id="characterCount">0</span>
+                            <i class="fas fa-chevron-down panel-arrow"></i>
+                        </div>
+                        <div class="panel-content" id="charactersList">
+                            <div id="charactersContainer" class="characters-container">
+                                <!-- Characters will be populated here -->
+                            </div>
+                            <button class="add-character-btn" onclick="app.characters.showAddDialog()">
+                                <i class="fas fa-plus"></i> Adicionar Personagem
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Locations Panel -->
+                    <div class="panel" id="locationsPanel">
+                        <div class="panel-header" onclick="app.ui.togglePanel('locationsList')">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Locações</span>
+                            <span class="badge" id="locationCount">0</span>
+                            <i class="fas fa-chevron-down panel-arrow"></i>
+                        </div>
+                        <div class="panel-content" id="locationsList">
+                            <div id="locationsContainer" class="locations-container">
+                                <!-- Locations will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes Panel -->
+                    <div class="panel" id="notesPanel">
+                        <div class="panel-header" onclick="app.ui.togglePanel('notesList')">
+                            <i class="fas fa-sticky-note"></i>
+                            <span>Notas</span>
+                            <i class="fas fa-chevron-down panel-arrow"></i>
+                        </div>
+                        <div class="panel-content" id="notesList">
+                            <div id="notesContainer" class="notes-container">
+                                <!-- Notes will be populated here -->
+                            </div>
+                            <button class="add-note-btn" onclick="app.notes.add()">
+                                <i class="fas fa-plus"></i> Nova Nota
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Editor Area -->
+            <div class="editor-wrapper">
+                <!-- Format Palette -->
+                <div class="format-palette" id="formatPalette">
+                    <button class="palette-btn active" data-format="action" title="Ação" onclick="app.format.setFormat('action')">
+                        <i class="fas fa-paragraph"></i>
+                    </button>
+                    <button class="palette-btn" data-format="scene" title="Cena" onclick="app.format.setFormat('scene')">
+                        <i class="fas fa-heading"></i>
+                    </button>
+                    <button class="palette-btn" data-format="character" title="Personagem" onclick="app.format.setFormat('character')">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <button class="palette-btn" data-format="dialogue" title="Diálogo" onclick="app.format.setFormat('dialogue')">
+                        <i class="fas fa-comments"></i>
+                    </button>
+                    <button class="palette-btn" data-format="parenthetical" title="Parenthetical" onclick="app.format.setFormat('parenthetical')">
+                        <i class="fas fa-brackets-curly"></i>
+                    </button>
+                    <button class="palette-btn" data-format="transition" title="Transição" onclick="app.format.setFormat('transition')">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+                </div>
+
+                <!-- Script Editor -->
+                <div class="script-editor-container" id="scriptEditorContainer">
+                    <div class="line-numbers" id="lineNumbers">
+                        <div class="line-number">1</div>
+                    </div>
+                    <textarea 
+                        id="scriptEditor" 
+                        class="script-editor"
+                        placeholder="Comece a escrever seu roteiro...&#10;&#10;INT. LOCAL - DIA&#10;&#10;JOÃO&#10;(entrando)&#10;Olá, mundo!"
+                        spellcheck="false"
+                    ></textarea>
+                    <div class="format-preview" id="formatPreview"></div>
+                </div>
+
+                <!-- Page Preview -->
+                <div class="page-preview" id="pagePreview">
+                    <div class="page-indicator">
+                        <span id="currentPage">1</span> / <span id="totalPages">1</span>
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <!-- Live preview will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar - Tools -->
+            <aside class="sidebar right-sidebar" id="rightSidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-tools"></i> Ferramentas</h3>
+                    <button class="sidebar-toggle" onclick="app.ui.toggleSidebar('right')">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div class="sidebar-content">
+                    <!-- Story Structure Panel -->
+                    <div class="panel" id="structurePanel">
+                        <div class="panel-header" onclick="app.ui.togglePanel('structureContent')">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Estrutura</span>
+                            <i class="fas fa-chevron-down panel-arrow"></i>
+                        </div>
+                        <div class="panel-content" id="structureContent">
+                            <div class="structure-timeline" id="structureTimeline">
+                                <!-- Story structure visualization -->
+                            </div>
+                            <div class="structure-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Ato 1</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-progress" id="act1Progress" style="width: 25%"></div>
+                                    </div>
+                                    <span class="stat-value" id="act1Percent">25%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Ato 2</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-progress" id="act2Progress" style="width: 50%"></div>
+                                    </div>
+                                    <span class="stat-value" id="act2Percent">50%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Ato 3</span>
+                                    <div class="stat-bar">
+                                        <div class="stat-progress" id="act3Progress" style="width: 25%"></div>
+                                    </div>
+                                    <span class="stat-value" id="act3Percent">25%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Panel -->
+                    <div class="panel" id="statsPanel">
+                        <div class="panel-header" onclick="app.ui.togglePanel('statsContent')">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>Estatísticas</span>
+                            <i class="fas fa-chevron-down panel-arrow"></i>
+                        </div>
+                        <div class="panel-content" id="statsContent">
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <i class="fas fa-file-alt"></i>
+                                    <span class="stat-number" id="pageCount">0</span>
+                                    <span class="stat-label">Páginas</span>
+                                </div>
+                                <div class="stat-card">
+                                    <i class="fas fa-film"></i>
+                                    <span class="stat-number" id="sceneCountStat">0</span>
+                                    <span class="stat-label">Cenas</span>
+                                </div>
+                                <div class="stat-card">
+                                    <i class="fas fa-users"></i>
+                                    <span class="stat-number" id="characterCountStat">0</span>
+                                    <span class="stat-label">Personagens</span>
+                                </div>
+                                <div class="stat-card">
+                                    <i class="fas fa-comment-alt"></i>
+                                    <span class="stat-number" id="dialogueCount">0</span>
+                                    <span class="stat-label">Diálogos</span>
+                                </div>
+                                <div class="stat-card">
+                                    <i class="fas fa-clock"></i>
+                                    <span class="stat-number" id="estimatedTime">0</span>
+                                    <span class="stat-label">Minutos</span>
+                                </div>
+                                <div class="stat-card">
+                                    <i class="fas fa-keyboard"></i>
+                                    <span class="stat-number" id="wordCount">0</span>
+                                    <span class="stat-label">Palavras</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Assistant Panel -->
+                    <div class="panel" id="aiPanel">
+                        <div class="panel-header" onclick="app.ui.togglePanel('aiContent')">
+                            <i class="fas fa-robot"></i>
+                            <span>Assistente IA</span>
+                            <span class="badge beta">BETA</span>
+                            <i class="fas fa-chevron-down panel-arrow"></i>
+                        </div>
+                        <div class="panel-content" id="aiContent">
+                            <div class="ai-suggestions" id="aiSuggestions">
+                                <div class="ai-tip">
+                                    <i class="fas fa-lightbulb"></i>
+                                    <span>Dica: Use Ctrl+Espaço para sugestões</span>
+                                </div>
+                            </div>
+                            <div class="ai-actions">
+                                <button class="ai-btn" onclick="app.ai.suggestNext()">
+                                    <i class="fas fa-magic"></i> Sugerir Próximo
+                                </button>
+                                <button class="ai-btn" onclick="app.ai.checkConsistency()">
+                                    <i class="fas fa-check-double"></i> Verificar Consistência
+                                </button>
+                                <button class="ai-btn" onclick="app.ai.improveDialogue()">
+                                    <i class="fas fa-wand-magic-sparkles"></i> Melhorar Diálogo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Version History Panel -->
+                    <div class="panel" id="historyPanel">
+                        <div class="panel-header" onclick="app.ui.togglePanel('historyContent')">
+                            <i class="fas fa-history"></i>
+                            <span>Histórico</span>
+                            <i class="fas fa-chevron-down panel-arrow"></i>
+                        </div>
+                        <div class="panel-content" id="historyContent">
+                            <div class="version-list" id="versionList">
+                                <!-- Version history items -->
+                            </div>
+                            <button class="version-btn" onclick="app.history.createSnapshot()">
+                                <i class="fas fa-camera"></i> Criar Snapshot
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span id="cursorPosition">Ln 1, Col 1</span>
+                <span class="status-separator">|</span>
+                <span id="currentFormat">Formato: Ação</span>
+                <span class="status-separator">|</span>
+                <span id="selectionInfo">Selecionado: 0</span>
+            </div>
+            <div class="status-center">
+                <span id="documentInfo">Pronto</span>
+            </div>
+            <div class="status-right">
+                <span id="languageInfo">PT-BR</span>
+                <span class="status-separator">|</span>
+                <span id="syncStatus">
+                    <i class="fas fa-cloud"></i> Sincronizado
+                </span>
+            </div>
+        </footer>
+
+        <!-- Character Dialog -->
+        <div id="characterDialog" class="modal hidden">
+            <div class="modal-overlay" onclick="app.characters.hideDialog()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-user-plus"></i> Adicionar/Editar Personagem</h3>
+                    <button class="modal-close" onclick="app.characters.hideDialog()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="characterForm">
+                        <div class="form-group">
+                            <label for="charName">Nome *</label>
+                            <input type="text" id="charName" required placeholder="Ex: JOÃO SILVA" />
+                        </div>
+                        <div class="form-group">
+                            <label for="charDescription">Descrição</label>
+                            <textarea id="charDescription" rows="3" placeholder="Ex: Homem, 40 anos, detective cansado"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="charNotes">Notas do Personagem</label>
+                            <textarea id="charNotes" rows="4" placeholder="Arco, motivações, características..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="charColor">Cor da Etiqueta</label>
+                            <input type="color" id="charColor" value="#3498db" />
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="app.characters.hideDialog()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="app.characters.save()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Note Dialog -->
+        <div id="noteDialog" class="modal hidden">
+            <div class="modal-overlay" onclick="app.notes.hideDialog()"></div>
+            <div class="modal-content modal-sm">
+                <div class="modal-header">
+                    <h3><i class="fas fa-sticky-note"></i> Nota</h3>
+                    <button class="modal-close" onclick="app.notes.hideDialog()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="noteForm">
+                        <div class="form-group">
+                            <label for="noteTitle">Título</label>
+                            <input type="text" id="noteTitle" placeholder="Título da nota" />
+                        </div>
+                        <div class="form-group">
+                            <label for="noteContent">Conteúdo</label>
+                            <textarea id="noteContent" rows="6" placeholder="Escreva sua nota aqui..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="noteColor">Cor</label>
+                            <input type="color" id="noteColor" value="#f1c40f" />
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" onclick="app.notes.delete()">Excluir</button>
+                    <button class="btn btn-secondary" onclick="app.notes.hideDialog()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="app.notes.save()">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Dialog -->
+        <div id="settingsDialog" class="modal hidden">
+            <div class="modal-overlay" onclick="app.settings.hide()"></div>
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3><i class="fas fa-cog"></i> Configurações</h3>
+                    <button class="modal-close" onclick="app.settings.hide()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-tabs">
+                        <button class="tab-btn active" data-tab="general">Geral</button>
+                        <button class="tab-btn" data-tab="editor">Editor</button>
+                        <button class="tab-btn" data-tab="formatting">Formatação</button>
+                        <button class="tab-btn" data-tab="shortcuts">Atalhos</button>
+                        <button class="tab-btn" data-tab="backup">Backup</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="tab-general">
+                        <div class="setting-item">
+                            <label>Tema</label>
+                            <select id="themeSelect" onchange="app.settings.update('theme', this.value)">
+                                <option value="light">Claro</option>
+                                <option value="dark">Escuro</option>
+                                <option value="system">Sistema</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Idioma</label>
+                            <select id="languageSelect" onchange="app.settings.update('language', this.value)">
+                                <option value="pt-BR">Português (Brasil)</option>
+                                <option value="en-US">English (US)</option>
+                                <option value="es">Español</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Auto-salvar</label>
+                            <input type="checkbox" id="autoSave" checked onchange="app.settings.update('autoSave', this.checked)" />
+                        </div>
+                        <div class="setting-item">
+                            <label>Intervalo Auto-salvar (minutos)</label>
+                            <input type="number" id="autoSaveInterval" value="5" min="1" max="60" onchange="app.settings.update('autoSaveInterval', this.value)" />
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="tab-editor">
+                        <div class="setting-item">
+                            <label>Tamanho da Fonte</label>
+                            <input type="range" id="fontSize" min="10" max="24" value="12" onchange="app.settings.update('fontSize', this.value)" />
+                            <span id="fontSizeValue">12px</span>
+                        </div>
+                        <div class="setting-item">
+                            <label>Largura da Linha</label>
+                            <select id="lineWidth" onchange="app.settings.update('lineWidth', this.value)">
+                                <option value="narrow">Estreita</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="wide">Larga</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Numerar Linhas</label>
+                            <input type="checkbox" id="lineNumbers" checked onchange="app.settings.update('lineNumbers', this.checked)" />
+                        </div>
+                        <div class="setting-item">
+                            <label>Highlight Sintaxe</label>
+                            <input type="checkbox" id="syntaxHighlight" checked onchange="app.settings.update('syntaxHighlight', this.checked)" />
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="tab-formatting">
+                        <div class="setting-item">
+                            <label>Formato de Página</label>
+                            <select id="pageFormat" onchange="app.settings.update('pageFormat', this.value)">
+                                <option value="letter">Carta (8.5" x 11")</option>
+                                <option value="a4">A4 (210mm x 297mm)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Margens</label>
+                            <input type="text" id="margins" value="1.5, 1.0, 1.0, 1.0" placeholder="Superior, Direita, Inferior, Esquerda" onchange="app.settings.update('margins', this.value)" />
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="tab-shortcuts">
+                        <table class="shortcuts-table">
+                            <thead>
+                                <tr>
+                                    <th>Ação</th>
+                                    <th>Atalho</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Novo Arquivo</td><td><kbd>Ctrl</kbd> + <kbd>N</kbd></td></tr>
+                                <tr><td>Abrir</td><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td></tr>
+                                <tr><td>Salvar</td><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td></tr>
+                                <tr><td>Exportar PDF</td><td><kbd>Ctrl</kbd> + <kbd>E</kbd></td></tr>
+                                <tr><td>Inserir Cena</td><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></td></tr>
+                                <tr><td>Inserir Personagem</td><td><kbd>Ctrl</kbd> + <kbd>P</kbd></td></tr>
+                                <tr><td>Inserir Diálogo</td><td><kbd>Ctrl</kbd> + <kbd>D</kbd></td></tr>
+                                <tr><td>Buscar</td><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td></tr>
+                                <tr><td>Substituir</td><td><kbd>Ctrl</kbd> + <kbd>H</kbd></td></tr>
+                                <tr><td>Desfazer</td><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td></tr>
+                                <tr><td>Refazer</td><td><kbd>Ctrl</kbd> + <kbd>Y</kbd></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="tab-content" id="tab-backup">
+                        <div class="setting-item">
+                            <label>Backup Automático</label>
+                            <input type="checkbox" id="autoBackup" checked onchange="app.settings.update('autoBackup', this.checked)" />
+                        </div>
+                        <div class="setting-item">
+                            <label>Local do Backup</label>
+                            <div class="input-with-button">
+                                <input type="text" id="backupLocation" value="./backups" readonly />
+                                <button class="btn" onclick="app.backup.selectLocation()">
+                                    <i class="fas fa-folder"></i> Escolher
+                                </button>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label>Manter Backups (dias)</label>
+                            <input type="number" id="backupDays" value="30" min="1" max="365" onchange="app.settings.update('backupDays', this.value)" />
+                        </div>
+                        <button class="btn btn-primary" onclick="app.backup.createNow()">
+                            <i class="fas fa-download"></i> Criar Backup Agora
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.backup.restore()">
+                            <i class="fas fa-upload"></i> Restaurar Backup
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="app.settings.reset()">Restaurar Padrões</button>
+                    <button class="btn btn-primary" onclick="app.settings.save()">Salvar & Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Progress Dialog -->
+        <div id="exportDialog" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content modal-sm">
+                <div class="modal-header">
+                    <h3><i class="fas fa-download"></i> Exportando...</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="progress-container">
+                        <div class="progress-bar" id="exportProgress"></div>
+                    </div>
+                    <p id="exportStatus">Preparando documento...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="welcome-screen hidden">
+            <div class="welcome-content">
+                <div class="welcome-logo">
+                    <i class="fas fa-film"></i>
+                    <h1>Roteirista Pro</h1>
+                    <p class="tagline">Studio Edition v3.0</p>
+                </div>
+                
+                <div class="welcome-actions">
+                    <button class="welcome-btn primary" onclick="app.file.new()">
+                        <i class="fas fa-file"></i>
+                        <span>Novo Roteiro</span>
+                    </button>
+                    <button class="welcome-btn" onclick="app.file.open()">
+                        <i class="fas fa-folder-open"></i>
+                        <span>Abrir Existente</span>
+                    </button>
+                </div>
+                
+                <div class="recent-files">
+                    <h3><i class="fas fa-history"></i> Recentes</h3>
+                    <div id="recentFilesList" class="recent-list">
+                        <!-- Recent files will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="welcome-features">
+                    <div class="feature-card">
+                        <i class="fas fa-bolt"></i>
+                        <h4>Rápido & Leve</h4>
+                        <p>Zero dependências complexas</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-paint-brush"></i>
+                        <h4>Design Moderno</h4>
+                        <p>Interface intuitiva e bonita</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-file-export"></i>
+                        <h4>Múltiplos Formatos</h4>
+                        <p>PDF, HTML, Fountain, FDX</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>Auto-Salvamento</h4>
+                        <p>Nunca perca seu trabalho</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div id="contextMenu" class="context-menu hidden">
+            <button onclick="app.editor.cut()">
+                <i class="fas fa-cut"></i> Cortar
+            </button>
+            <button onclick="app.editor.copy()">
+                <i class="fas fa-copy"></i> Copiar
+            </button>
+            <button onclick="app.editor.paste()">
+                <i class="fas fa-paste"></i> Colar
+            </button>
+            <div class="context-divider"></div>
+            <button onclick="app.format.insertScene()">
+                <i class="fas fa-heading"></i> Inserir Cena
+            </button>
+            <button onclick="app.format.insertCharacter()">
+                <i class="fas fa-user"></i> Inserir Personagem
+            </button>
+            <button onclick="app.format.insertDialogue()">
+                <i class="fas fa-comments"></i> Inserir Diálogo
+            </button>
+            <div class="context-divider"></div>
+            <button onclick="app.notes.addAtCursor()">
+                <i class="fas fa-sticky-note"></i> Adicionar Nota
+            </button>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
