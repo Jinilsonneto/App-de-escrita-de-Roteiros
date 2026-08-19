@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="Roteirista Pro - Editor profissional de roteiros para cinema e TV">
+    <meta name="theme-color" content="#6366f1">
+    <title>Roteirista Pro v4.0 - Ultimate Edition</title>
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Title Bar -->
+        <header class="title-bar">
+            <div class="title-bar-left">
+                <div class="app-logo">
+                    <i class="fas fa-film"></i>
+                    <span>Roteirista Pro</span>
+                    <span class="version-badge">v4.0 Ultimate</span>
+                </div>
+            </div>
+            <div class="title-bar-center">
+                <div class="file-info">
+                    <input type="text" id="fileName" class="file-name-input" value="Sem Título.fountain" />
+                    <span id="saveStatus" class="save-status">
+                        <i class="fas fa-check-circle"></i> Salvo
+                    </span>
+                </div>
+            </div>
+            <div class="title-bar-right">
+                <button class="icon-btn theme-toggle" id="themeToggle" title="Alternar Tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn" id="fullscreenBtn" title="Tela Cheia (F11)">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Toolbar -->
+        <nav class="main-toolbar">
+            <div class="toolbar-group">
+                <button class="tool-btn" data-action="new" title="Novo (Ctrl+N)">
+                    <i class="fas fa-file"></i>
+                    <span>Novo</span>
+                </button>
+                <button class="tool-btn" data-action="open" title="Abrir (Ctrl+O)">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Abrir</span>
+                </button>
+                <button class="tool-btn" data-action="save" title="Salvar (Ctrl+S)">
+                    <i class="fas fa-save"></i>
+                    <span>Salvar</span>
+                </button>
+                <div class="dropdown">
+                    <button class="tool-btn dropdown-toggle" data-dropdown="exportMenu">
+                        <i class="fas fa-download"></i>
+                        <span>Exportar</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="exportMenu" class="dropdown-menu">
+                        <button data-action="export-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+                        <button data-action="export-html"><i class="fas fa-file-code"></i> HTML</button>
+                        <button data-action="export-fountain"><i class="fas fa-file-alt"></i> Fountain</button>
+                        <button data-action="export-txt"><i class="fas fa-file-lines"></i> Texto</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-group">
+                <button class="tool-btn" data-action="undo" title="Desfazer (Ctrl+Z)">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button class="tool-btn" data-action="redo" title="Refazer (Ctrl+Y)">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-group">
+                <button class="tool-btn" data-action="format-scene" title="Cena (Ctrl+Shift+C)">
+                    <i class="fas fa-video"></i>
+                    <span>Cena</span>
+                </button>
+                <button class="tool-btn" data-action="format-action" title="Ação (Ctrl+Shift+A)">
+                    <i class="fas fa-person-running"></i>
+                    <span>Ação</span>
+                </button>
+                <button class="tool-btn" data-action="format-character" title="Personagem (Ctrl+P)">
+                    <i class="fas fa-user"></i>
+                    <span>Person.</span>
+                </button>
+                <button class="tool-btn" data-action="format-dialogue" title="Diálogo (Ctrl+D)">
+                    <i class="fas fa-comments"></i>
+                    <span>Diálogo</span>
+                </button>
+                <button class="tool-btn" data-action="format-parenthetical" title="Parenthetical (Ctrl+Shift+P)">
+                    <i class="fas fa-brackets-round"></i>
+                    <span>( )</span>
+                </button>
+                <button class="tool-btn" data-action="format-transition" title="Transição (Ctrl+T)">
+                    <i class="fas fa-arrow-right-arrow-left"></i>
+                    <span>Trans.</span>
+                </button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-group">
+                <button class="tool-btn" data-action="search" title="Buscar (Ctrl+F)">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="tool-btn" data-action="notes" title="Notas (Ctrl+Shift+N)">
+                    <i class="fas fa-sticky-note"></i>
+                </button>
+                <button class="tool-btn" data-action="characters" title="Personagens (Ctrl+Shift+P)">
+                    <i class="fas fa-users"></i>
+                </button>
+                <button class="tool-btn" data-action="scenes" title="Cenas (Ctrl+Shift+S)">
+                    <i class="fas fa-list-ol"></i>
+                </button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-group">
+                <div class="zoom-control">
+                    <button class="icon-btn" data-action="zoom-out" title="Diminuir Zoom">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span id="zoomLevel">100%</span>
+                    <button class="icon-btn" data-action="zoom-in" title="Aumentar Zoom">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Sidebar - Navigator -->
+            <aside class="sidebar left-sidebar" id="leftSidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-compass"></i> Navegador</h3>
+                    <button class="icon-btn sidebar-toggle" data-target="leftSidebar">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                <div class="sidebar-content">
+                    <div class="panel-section">
+                        <div class="panel-header" data-panel="scenesPanel">
+                            <span><i class="fas fa-video"></i> Cenas</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="scenesPanel" class="panel-body">
+                            <div id="scenesList" class="scenes-list"></div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-header" data-panel="charactersPanel">
+                            <span><i class="fas fa-users"></i> Personagens</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="charactersPanel" class="panel-body">
+                            <div id="charactersList" class="characters-list"></div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-header" data-panel="locationsPanel">
+                            <span><i class="fas fa-map-location-dot"></i> Locações</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="locationsPanel" class="panel-body">
+                            <div id="locationsList" class="locations-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Editor Area -->
+            <main class="editor-container">
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="lineNumbers"></div>
+                    <textarea 
+                        id="editor" 
+                        class="editor" 
+                        placeholder="Comece a escrever seu roteiro...&#10;&#10;Dicas:&#10;- INT. ou EXT. para cenas&#10;- Nomes em CAIXA ALTA para personagens&#10;- Use os atalhos ou botões acima"
+                        spellcheck="false"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                    ></textarea>
+                </div>
+                
+                <!-- Search Bar -->
+                <div id="searchBar" class="search-bar hidden">
+                    <div class="search-inputs">
+                        <input type="text" id="searchInput" placeholder="Buscar..." />
+                        <input type="text" id="replaceInput" placeholder="Substituir por..." />
+                    </div>
+                    <div class="search-actions">
+                        <button class="icon-btn" data-action="search-prev" title="Anterior">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                        <button class="icon-btn" data-action="search-next" title="Próximo">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <button class="tool-btn" data-action="replace" title="Substituir">
+                            Substituir
+                        </button>
+                        <button class="tool-btn" data-action="replaceAll" title="Substituir Tudo">
+                            Todos
+                        </button>
+                        <button class="icon-btn" data-action="search-close" title="Fechar">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <label class="search-option">
+                        <input type="checkbox" id="regexToggle" />
+                        <span>Regex</span>
+                    </label>
+                </div>
+            </main>
+
+            <!-- Right Sidebar - Tools -->
+            <aside class="sidebar right-sidebar" id="rightSidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-tools"></i> Ferramentas</h3>
+                    <button class="icon-btn sidebar-toggle" data-target="rightSidebar">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="sidebar-content">
+                    <div class="panel-section">
+                        <div class="panel-header" data-panel="statsPanel">
+                            <span><i class="fas fa-chart-bar"></i> Estatísticas</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="statsPanel" class="panel-body">
+                            <div class="stat-item">
+                                <span class="stat-label">Páginas:</span>
+                                <span id="pageCount" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Palavras:</span>
+                                <span id="wordCount" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Caracteres:</span>
+                                <span id="charCount" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Cenas:</span>
+                                <span id="sceneCount" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Tempo estimado:</span>
+                                <span id="timeEstimate" class="stat-value">0 min</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-header" data-panel="structurePanel">
+                            <span><i class="fas fa-sitemap"></i> Estrutura</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="structurePanel" class="panel-body">
+                            <div class="structure-viz" id="structureViz"></div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-header" data-panel="notesPanel">
+                            <span><i class="fas fa-lightbulb"></i> Notas</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="notesPanel" class="panel-body">
+                            <button class="btn-primary btn-full" data-action="addNote">
+                                <i class="fas fa-plus"></i> Nova Nota
+                            </button>
+                            <div id="notesList" class="notes-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span id="cursorPosition">Ln 1, Col 1</span>
+                <span class="status-separator">|</span>
+                <span id="currentFormat">Formato: Ação</span>
+            </div>
+            <div class="status-right">
+                <span id="autoSaveStatus"><i class="fas fa-clock"></i> Auto-save: 5min</span>
+                <span class="status-separator">|</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="spellCheckToggle" />
+                    <span class="toggle-slider"></span>
+                </label>
+                <span>Ortografia</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalOverlay" class="modal-overlay hidden"></div>
+
+    <!-- Note Modal -->
+    <div id="noteModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-sticky-note"></i> <span id="noteModalTitle">Nova Nota</span></h3>
+                <button class="icon-btn modal-close" data-modal="noteModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="noteId" />
+                <input type="text" id="noteTitle" placeholder="Título da nota" class="input-field" />
+                <textarea id="noteContent" placeholder="Conteúdo da nota..." class="textarea-field" rows="5"></textarea>
+                <div class="color-picker">
+                    <label>Cor:</label>
+                    <div class="color-options">
+                        <button class="color-option" data-color="yellow" style="background: #fef3c7;"></button>
+                        <button class="color-option" data-color="green" style="background: #d1fae5;"></button>
+                        <button class="color-option" data-color="blue" style="background: #dbeafe;"></button>
+                        <button class="color-option" data-color="pink" style="background: #fce7f3;"></button>
+                        <button class="color-option" data-color="purple" style="background: #e9d5ff;"></button>
+                    </div>
+                    <input type="hidden" id="noteColor" value="yellow" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-modal="noteModal">Cancelar</button>
+                <button class="btn-primary" data-action="saveNote">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Configurações</h3>
+                <button class="icon-btn modal-close" data-modal="settingsModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label>Tema</label>
+                    <select id="settingTheme" class="select-field">
+                        <option value="light">Claro</option>
+                        <option value="dark">Escuro</option>
+                        <option value="system">Sistema</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Auto-save (minutos)</label>
+                    <input type="number" id="settingAutoSave" class="input-field" min="1" max="60" value="5" />
+                </div>
+                <div class="setting-group">
+                    <label>Tamanho da fonte</label>
+                    <input type="range" id="settingFontSize" class="range-field" min="10" max="20" value="12" />
+                    <span id="fontSizeValue">12px</span>
+                </div>
+                <div class="setting-group">
+                    <label>Zoom padrão</label>
+                    <input type="range" id="settingZoom" class="range-field" min="50" max="200" value="100" />
+                    <span id="zoomValue">100%</span>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="settingLineNumbers" checked />
+                        Mostrar números de linha
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="settingAutoComplete" checked />
+                        Auto-completar formatação
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-modal="settingsModal">Cancelar</button>
+                <button class="btn-primary" data-action="saveSettings">Salvar Configurações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Progress Modal -->
+    <div id="exportModal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3><i class="fas fa-download"></i> Exportando...</h3>
+            </div>
+            <div class="modal-body">
+                <div class="progress-bar">
+                    <div id="exportProgress" class="progress-fill"></div>
+                </div>
+                <p id="exportStatus">Preparando documento...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu hidden">
+        <button data-action="ctx-cut"><i class="fas fa-cut"></i> Cortar</button>
+        <button data-action="ctx-copy"><i class="fas fa-copy"></i> Copiar</button>
+        <button data-action="ctx-paste"><i class="fas fa-paste"></i> Colar</button>
+        <div class="context-divider"></div>
+        <button data-action="ctx-undo"><i class="fas fa-undo"></i> Desfazer</button>
+        <button data-action="ctx-redo"><i class="fas fa-redo"></i> Refazer</button>
+        <div class="context-divider"></div>
+        <button data-action="ctx-selectall"><i class="fas fa-check-double"></i> Selecionar Tudo</button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
