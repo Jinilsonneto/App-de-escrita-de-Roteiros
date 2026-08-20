@@ -25,6 +25,9 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# Obter o diretório atual do script (não assumir /workspace)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Diretório de instalação
 INSTALL_DIR="/opt/roteirista-pro"
 APP_NAME="Roteirista Pro"
@@ -42,9 +45,9 @@ else
     exit 1
 fi
 
-# Copiar arquivos
+# Copiar arquivos - usar SCRIPT_DIR em vez de /workspace fixo
 echo -e "${YELLOW}[2/5]${NC} Copiando arquivos do aplicativo..."
-cp -r /workspace/* "$INSTALL_DIR/"
+cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Arquivos copiados com sucesso${NC}"
 else
@@ -71,7 +74,7 @@ cat > /usr/share/applications/roteirista-pro.desktop << DESKTOP
 Version=3.0
 Name=Roteirista Pro
 Comment=Editor profissional de roteiros - Studio Edition
-Exec=google-chrome --app=file://$INSTALL_DIR/index.html
+Exec=/usr/local/bin/roteirista-pro
 Icon=$INSTALL_DIR/icon.png
 Terminal=false
 Type=Application
@@ -100,15 +103,17 @@ echo -e "${YELLOW}[5/5]${NC} Criando script de lançamento..."
 
 cat > /usr/local/bin/roteirista-pro << 'LAUNCHER'
 #!/bin/bash
-# Lançar Roteirista Pro
+# Lançar Roteirista Pro - usa caminho relativo ao local de instalação
+
+INSTALL_DIR="/opt/roteirista-pro"
 
 # Tentar diferentes navegadores
 if command -v google-chrome &> /dev/null; then
-    google-chrome --app=file:///opt/roteirista-pro/index.html "$@"
+    google-chrome --app="file://$INSTALL_DIR/index.html" "$@"
 elif command -v chromium &> /dev/null; then
-    chromium --app=file:///opt/roteirista-pro/index.html "$@"
+    chromium --app="file://$INSTALL_DIR/index.html" "$@"
 elif command -v firefox &> /dev/null; then
-    firefox --new-window file:///opt/roteirista-pro/index.html "$@"
+    firefox --new-window "file://$INSTALL_DIR/index.html" "$@"
 else
     echo "Erro: Nenhum navegador compatível encontrado!"
     echo "Por favor, instale Google Chrome, Chromium ou Firefox."

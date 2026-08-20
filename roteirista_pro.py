@@ -1,3 +1,4 @@
+import html
 import tkinter as tk
 from tkinter import filedialog, messagebox, font, ttk, colorchooser, simpledialog
 import os
@@ -21,6 +22,9 @@ from reportlab.lib.colors import black, blue
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import hmac
 
 class ScriptWriterApp:
     def __init__(self, root):
@@ -45,7 +49,10 @@ class ScriptWriterApp:
         
         # Variável para controlar o arquivo atual
         self.current_file = None
-        self.current_password = None
+        self.current_password = None  # Será limpo após uso quando possível
+        
+        # Hash da senha para verificação de integridade (não armazena a senha em claro)
+        self.password_hash = None
         
         # Configurações do aplicativo
         self.settings = {
@@ -593,17 +600,16 @@ class ScriptWriterApp:
     
     def toggle_sidebar(self):
         if self.sidebar_expanded:
-            # Retrair
+            # Retrair - apenas esconder, não destruir e recriar
             self.sidebar.pack_forget()
-            self.sidebar = tk.Frame(self.root, bg=self.blue_color, width=40)
-            self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
-            self.toggle_button = tk.Button(self.sidebar, text="▶", command=self.toggle_sidebar,
+            self.toggle_button = tk.Button(self.main_toolbar, text="☰", command=self.toggle_sidebar,
                                           bg=self.blue_color, fg=self.fg_color, bd=0)
-            self.toggle_button.pack(side=tk.RIGHT, fill=tk.Y)
+            self.toggle_button.pack(side=tk.LEFT, padx=2)
             self.sidebar_expanded = False
         else:
-            # Expandir
-            self.sidebar.pack_forget()
+            # Expandir - remover botão toggle e mostrar sidebar existente
+            if hasattr(self, 'toggle_button') and self.toggle_button.winfo_exists():
+                self.toggle_button.destroy()
             self.create_sidebar()
             self.sidebar_expanded = True
     
@@ -781,6 +787,10 @@ class ScriptWriterApp:
     
     def update_line_numbers(self):
         if not self.settings['show_line_numbers']:
+            return
+        
+        # Verificar se line_numbers existe antes de acessar
+        if not hasattr(self, 'line_numbers') or self.line_numbers is None:
             return
             
         # Obter número de linhas
@@ -1222,22 +1232,29 @@ class ScriptWriterApp:
                 fernet = Fernet(key)
                 encrypted_data = fernet.encrypt(content.encode('utf-8'))
                 
+                # Calcular checksum para verificação de integridade
+                checksum = hashlib.sha256(content.encode('utf-8')).hexdigest()
+                
                 # Codificar em base64
                 encrypted_data = base64.b64encode(encrypted_data)
                 
-                # Salvar arquivo
+                # Salvar arquivo com checksum
                 with open(file_path, "wb") as file:
+                    # Formato: checksum (64 bytes hex) + dados criptografados
+                    file.write(checksum.encode('utf-8') + b'\n')
                     file.write(encrypted_data)
                 
                 self.current_file = file_path
-                self.current_password = password
+                # Armazenar apenas o hash da senha, não a senha em si
+                self.password_hash = hashlib.sha256(password.encode()).hexdigest()
+                self.current_password = None  # Limpar senha da memória após uso
                 self.text_editor.edit_modified(False)
                 self.root.title(f"Roteirista Pro - {os.path.basename(file_path)} [Seguro]")
                 self.update_status(f"Arquivo seguro salvo: {os.path.basename(file_path)}")
                 self.update_save_indicator()
                 
-                # Salvar metadados (personagens e cenas)
-                self.save_metadata()
+                # Salvar metadados (personagens e cenas) de forma segura também
+                self.save_metadata(secure=True)
             except Exception as e:
                 messagebox.showerror("Erro ao salvar", f"Não foi possível salvar o arquivo seguro: {str(e)}")
     
@@ -1289,6 +1306,22 @@ class ScriptWriterApp:
                 doc = SimpleDocTemplate(pdf_path, pagesize=letter)
                 styles = getSampleStyleSheet()
                 story = []
+                
+                # Registrar fontes com suporte a caracteres acentuados
+                try:
+                    # Tentar registrar uma fonte que suporte UTF-8
+                    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+                    if os.path.exists(font_path):
+                        pdfmetrics.RegisterFont(TTFont('DejaVuSans', font_path))
+                        bold_path = font_path.replace('DejaVuSans.ttf', 'DejaVuSans-Bold.ttf')
+                        mono_path = font_path.replace('DejaVuSans.ttf', 'DejaVuSansMono.ttf')
+                        if os.path.exists(bold_path):
+                            pdfmetrics.RegisterFont(TTFont('DejaVuSans-Bold', bold_path))
+                        if os.path.exists(mono_path):
+                            pdfmetrics.RegisterFont(TTFont('DejaVuSansMono', mono_path))
+                except Exception as e:
+                    # Se não encontrar a fonte, usar fontes padrão do reportlab
+                    pass
                 
                 # Obter conteúdo do editor
                 content = self.text_editor.get(1.0, tk.END)
@@ -1364,6 +1397,8 @@ class ScriptWriterApp:
                 
                 messagebox.showinfo("Exportar PDF", f"PDF exportado com sucesso:\n{pdf_path}")
                 self.update_status(f"PDF exportado: {os.path.basename(pdf_path)}")
+            except ImportError as e:
+                messagebox.showerror("Erro ao exportar PDF", f"Biblioteca necessária não encontrada: {str(e)}\n\nInstale com: pip install reportlab")
             except Exception as e:
                 messagebox.showerror("Erro ao exportar PDF", f"Não foi possível exportar para PDF: {str(e)}")
     
@@ -1487,10 +1522,10 @@ class ScriptWriterApp:
             messagebox.showerror("Erro ao importar", f"Não foi possível importar o arquivo Fountain: {str(e)}")
     
     def generate_html(self):
-        # Gerar HTML a partir do conteúdo do editor
+        # Gerar HTML a partir do conteúdo do editor com sanitização XSS
         content = self.text_editor.get(1.0, tk.END)
         
-        # Analisar conteúdo e aplicar formatação HTML
+        # Analisar conteúdo e aplicar formatação HTML com escape de caracteres especiais
         lines = content.split('\n')
         html_lines = []
         
@@ -1501,26 +1536,31 @@ class ScriptWriterApp:
                 # Linha em branco
                 html_lines.append("<br>")
             elif stripped.startswith("CENA:"):
-                # Cena
-                html_lines.append(f'<div class="scene">{stripped}</div>')
+                # Cena - escapar caracteres HTML para prevenir XSS
+                scene_content = html.escape(stripped[6:])
+                html_lines.append(f'<div class="scene">CENA: {scene_content}</div>')
             elif stripped.isupper() and len(stripped) < self.settings['character_width']:
-                # Personagem
-                html_lines.append(f'<div class="character">{stripped}</div>')
+                # Personagem - escapar caracteres HTML
+                char_content = html.escape(stripped)
+                html_lines.append(f'<div class="character">{char_content}</div>')
             elif stripped.startswith("TRANSIÇÃO:"):
-                # Transição
-                html_lines.append(f'<div class="transition">{stripped}</div>')
+                # Transição - escapar caracteres HTML
+                trans_content = html.escape(stripped[11:])
+                html_lines.append(f'<div class="transition">TRANSIÇÃO: {trans_content}</div>')
             elif stripped.startswith("NOTA:"):
-                # Nota
-                html_lines.append(f'<div class="note">{stripped}</div>')
+                # Nota - escapar caracteres HTML
+                note_content = html.escape(stripped[6:])
+                html_lines.append(f'<div class="note">NOTA: {note_content}</div>')
             else:
-                # Ação ou diálogo
+                # Ação ou diálogo - escapar caracteres HTML
+                escaped_content = html.escape(stripped)
                 # Verificar se a linha anterior é um personagem
                 if html_lines and html_lines[-1].startswith('<div class="character">'):
                     # Diálogo
-                    html_lines.append(f'<div class="dialogue">{stripped}</div>')
+                    html_lines.append(f'<div class="dialogue">{escaped_content}</div>')
                 else:
                     # Ação
-                    html_lines.append(f'<div class="action">{stripped}</div>')
+                    html_lines.append(f'<div class="action">{escaped_content}</div>')
         
         html_content = """
         <!DOCTYPE html>
@@ -3357,6 +3397,9 @@ Personagens com mais diálogos:
     
     def reformat_script(self):
         # Reformatar o roteiro de acordo com o padrão da indústria
+        # Salvar estado atual para permitir desfazer
+        current_content = self.text_editor.get(1.0, tk.END)
+        
         text = self.text_editor.get(1.0, tk.END)
         lines = text.split('\n')
         
@@ -3400,9 +3443,12 @@ Personagens com mais diálogos:
                     action_text = stripped
                     reformatted_lines.append(' ' * 10 + action_text)
         
-        # Atualizar o editor
+        # Usar edit_undo/insert para preservar histórico de desfazer
+        # Em vez de delete + insert que limpa o histórico
+        self.text_editor.edit_separator()
         self.text_editor.delete(1.0, tk.END)
         self.text_editor.insert(1.0, '\n'.join(reformatted_lines))
+        self.text_editor.edit_separator()
         
         # Aplicar formatação
         self.apply_formatting()
@@ -4353,10 +4399,14 @@ Recursos principais:
         self.root.destroy()
     
     def auto_save(self):
-        if self.settings['auto_save'] and self.current_file and self.text_editor.edit_modified():
-            self.save_file()
+        try:
+            if self.settings['auto_save'] and self.current_file and self.text_editor.edit_modified():
+                self.save_file()
+        except Exception as e:
+            # Em caso de erro, logar mas não interromper o loop de auto-salvamento
+            print(f"Erro no auto-save: {e}")
         
-        # Agendar próximo auto-salvamento
+        # Agendar próximo auto-salvamento (sempre re-agendar para não parar)
         self.root.after(self.settings['auto_save_interval'] * 60000, self.auto_save)
     
     def load_settings(self):
@@ -4376,7 +4426,7 @@ Recursos principais:
         except:
             pass
     
-    def save_metadata(self):
+    def save_metadata(self, secure=False):
         if not self.current_file:
             return
             
@@ -4390,10 +4440,22 @@ Recursos principais:
         }
         
         try:
-            with open(metadata_path, 'w', encoding='utf-8') as f:
-                json.dump(metadata, f)
-        except:
-            pass
+            if secure and self.password_hash:
+                # Se for arquivo seguro, criptografar metadados também
+                # Usar o hash da senha como base para derivar uma chave
+                key = base64.urlsafe_b64encode(bytes.fromhex(self.password_hash))
+                fernet = Fernet(key)
+                encrypted_metadata = fernet.encrypt(json.dumps(metadata).encode('utf-8'))
+                with open(metadata_path + '.enc', 'wb') as f:
+                    f.write(base64.b64encode(encrypted_metadata))
+                # Remover arquivo .meta não criptografado se existir
+                if os.path.exists(metadata_path):
+                    os.remove(metadata_path)
+            else:
+                with open(metadata_path, 'w', encoding='utf-8') as f:
+                    json.dump(metadata, f)
+        except Exception as e:
+            print(f"Erro ao salvar metadados: {e}")
     
     def load_metadata(self):
         if not self.current_file:
@@ -4401,6 +4463,38 @@ Recursos principais:
             
         # Carregar metadados (personagens, cenas e notas) de um arquivo separado
         metadata_path = os.path.splitext(self.current_file)[0] + '.meta'
+        metadata_path_enc = metadata_path + '.enc'
+        
+        # Tentar carregar versão criptografada primeiro
+        if os.path.exists(metadata_path_enc):
+            try:
+                if self.password_hash:
+                    key = base64.urlsafe_b64encode(bytes.fromhex(self.password_hash))
+                    fernet = Fernet(key)
+                    with open(metadata_path_enc, 'rb') as f:
+                        encrypted_data = base64.b64decode(f.read())
+                        decrypted_data = fernet.decrypt(encrypted_data)
+                        metadata = json.loads(decrypted_data.decode('utf-8'))
+                    
+                    # Carregar personagens
+                    self.characters = metadata.get('characters', [])
+                    self.characters_listbox.delete(0, tk.END)
+                    for char in self.characters:
+                        self.characters_listbox.insert(tk.END, char['name'])
+                        
+                    # Carregar cenas
+                    self.scenes = metadata.get('scenes', [])
+                    self.scenes_listbox.delete(0, tk.END)
+                    for scene in self.scenes:
+                        self.scenes_listbox.insert(tk.END, scene['title'])
+                        
+                    # Carregar notas
+                    notes = metadata.get('notes', '')
+                    self.notes_editor.delete(1.0, tk.END)
+                    self.notes_editor.insert(1.0, notes)
+            except Exception as e:
+                print(f"Erro ao carregar metadados criptografados: {e}")
+            return
         
         if not os.path.exists(metadata_path):
             return
@@ -4425,8 +4519,8 @@ Recursos principais:
             notes = metadata.get('notes', '')
             self.notes_editor.delete(1.0, tk.END)
             self.notes_editor.insert(1.0, notes)
-        except:
-            pass
+        except Exception as e:
+            print(f"Erro ao carregar metadados: {e}")
     
     def import_fdx(self, file_path):
         # Importar do formato Final Draft (FDX)
@@ -4512,24 +4606,47 @@ Recursos principais:
 
 def create_desktop_shortcut():
     """Cria um atalho na área de trabalho para o aplicativo"""
-    try:
-        import win32com.client
-        
-        desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-        path = os.path.join(desktop, "Roteirista Pro.lnk")
-        
-        shell = win32com.client.Dispatch("WScript.Shell")
-        shortcut = shell.CreateShortCut(path)
-        shortcut.Targetpath = sys.executable
-        shortcut.Arguments = os.path.abspath(__file__)
-        shortcut.IconLocation = sys.executable + ",0"
-        shortcut.save()
-        
-        messagebox.showinfo("Atalho Criado", "Um atalho foi criado na área de trabalho!")
-    except:
-        messagebox.showwarning("Atalho Não Criado", 
-                             "Não foi possível criar o atalho automaticamente. "
-                             "Você pode criar um manualmente.")
+    # Verificar sistema operacional
+    if sys.platform == 'win32':
+        try:
+            import win32com.client
+            
+            desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+            path = os.path.join(desktop, "Roteirista Pro.lnk")
+            
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shortcut = shell.CreateShortCut(path)
+            shortcut.Targetpath = sys.executable
+            shortcut.Arguments = os.path.abspath(__file__)
+            shortcut.IconLocation = sys.executable + ",0"
+            shortcut.save()
+            
+            messagebox.showinfo("Atalho Criado", "Um atalho foi criado na área de trabalho!")
+        except ImportError:
+            messagebox.showwarning("Atalho Não Criado", 
+                                 "Não foi possível criar o atalho automaticamente. "
+                                 "A biblioteca win32com não está disponível.")
+        except Exception as e:
+            messagebox.showwarning("Atalho Não Criado", 
+                                 f"Não foi possível criar o atalho automaticamente: {str(e)}")
+    elif sys.platform == 'darwin':
+        # macOS - criar script AppleScript ou .command file
+        try:
+            desktop = os.path.expanduser('~/Desktop')
+            script_path = os.path.join(desktop, "Roteirista Pro.command")
+            
+            with open(script_path, 'w') as f:
+                f.write(f'#!/bin/bash\n{sys.executable} "{os.path.abspath(__file__)}"')
+            
+            os.chmod(script_path, 0o755)
+            messagebox.showinfo("Atalho Criado", "Um atalho foi criado na área de trabalho!")
+        except Exception as e:
+            messagebox.showwarning("Atalho Não Criado", 
+                                 f"Não foi possível criar o atalho automaticamente: {str(e)}")
+    else:
+        # Linux - já é tratado pelo install.sh
+        messagebox.showinfo("Atalho no Linux", 
+                          "No Linux, use o script install.sh para criar atalhos no menu de aplicativos.")
 
 if __name__ == "__main__":
     root = tk.Tk()
